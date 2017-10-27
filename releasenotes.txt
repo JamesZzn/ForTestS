@@ -1,0 +1,59 @@
+////////////////////////////////////////////////////////////////////////
+//                End Of Line Calibration(EOL) Module                 //
+////////////////////////////////////////// /////////////////////////////
+
+Introduction:
+EOL Module provides a chessboard based solution for automatic exterinsic param calibration.
+
+Publish date:
+5/5/2017
+
+Version:
+2.2.0
+
+Supported platforms:
+x64
+
+Known issues:
+None
+
+Library dependency:
+None
+
+File List:
+|----doc
+|    |----						 Developer's Guide
+|----include
+|    |----eol_calib_cb_interface.h		 	 Head file
+|----lib
+|    |----EOL_calib_cb.lib                     		EOL calib cb library
+|----samplecode
+|    |----eol_main_driver.cpp			 	Sample code
+|----releasenotes.txt				 	This file
+
+Change Logs:
+V2.2.00 2017/5/8
+1.Log file created;
+2.Currently, station type EOL_OFILM and EOL_GAC are surpported.
+
+V2.2.01 2017/5/11
+1.optimize memory malloc;
+2.remove goto sentence;
+3.remove bugs in median found function.
+
+V2.2.02 2017/5/11
+replace fixed camera num 4 and fixed pattern num 4 with marco
+
+V2.2.03 2017/5/11
+1.tide up public functions
+2.move static variables' definition into .cpp file
+
+V2.2.04 2017/5/15
+1.revise function's scale
+
+V2.2.05 2017/5/15
+1. revise a unimportant world coordinate to vehicle coordinate trans code
+
+V2.2.06 2017/5/23
+1.revise OPTIMIZE_CENTER code;
+2.add support for rgba format image decode;

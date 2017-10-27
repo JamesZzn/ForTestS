@@ -1,0 +1,82 @@
+﻿生成启动时间为 2017/9/19 14:37:53。
+     1>项目“E:\CODE\源码\EOL_calib_GAC\port\vc2012\EOL_calib_cb\EOL_calib_cb.vcxproj”在节点 2 上(Build 个目标)。
+     1>ClCompile:
+         D:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I..\..\..\source\EOL_calib_cb /I..\..\..\..\COMM\thirdparty\opencv300\build\include /I..\..\..\..\COMM\thirdparty\intrinsic_modeller /I..\..\..\..\COMM\thirdparty /I..\..\..\..\COMM\thirdparty\libcmatrix\include /I..\..\..\..\COMM\source\utility\common /I..\..\..\..\COMM\source\utility /I..\..\..\..\COMM\source /Zi /nologo /W3 /WX- /sdl /Od /GL /D _CRT_SECURE_NO_WARNINGS /D MODULER_EXPORTS /D _DEBUG /D _WINDOWS /D _USRDLL /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt ..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp ..\..\..\source\EOL_calib_cb\eol_image_process.cpp
+         eol_image_process.cpp
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(55): warning C4244: “=”: 从“float64_t”转换到“int32_t”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(72): warning C4101: “v”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(72): warning C4101: “u”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(74): warning C4101: “V”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(74): warning C4101: “U”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(236): warning C4101: “iHalf”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(349): warning C4101: “tempY”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(349): warning C4101: “tempU”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(349): warning C4101: “tempV”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(398): warning C4101: “tempY”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(398): warning C4101: “tempU”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(396): warning C4101: “iHalf”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(398): warning C4101: “tempV”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(445): warning C4101: “tempY”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(445): warning C4101: “tempU”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(445): warning C4101: “tempV”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(487): warning C4101: “tempY”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(487): warning C4101: “tempU”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(485): warning C4101: “iHalf”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(487): warning C4101: “tempV”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(485): warning C4101: “jHalf”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(522): warning C4101: “tempY”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(522): warning C4101: “tempU”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(519): warning C4101: “iHalf”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(522): warning C4101: “tempV”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(519): warning C4101: “jHalf”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(642): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(645): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(648): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(651): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(654): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(679): warning C4101: “j”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(740): warning C4101: “j”: 未引用的局部变量
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(789): warning C4244: “=”: 从“const int”转换到“float32_t”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(790): warning C4244: “=”: 从“const int”转换到“float32_t”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_image_process.cpp(814): warning C4244: “=”: 从“float64_t”转换到“float”，可能丢失数据
+         eol_corner_detect.cpp
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(100): warning C4244: “初始化”: 从“float32_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(102): warning C4244: “初始化”: 从“float32_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(104): warning C4244: “参数”: 从“int”转换到“float32_t”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(282): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(283): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(523): warning C4244: “初始化”: 从“float32_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(525): warning C4244: “初始化”: 从“float32_t”转换到“int”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(527): warning C4244: “参数”: 从“int”转换到“float32_t”，可能丢失数据
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1257): warning C4258: “i”: 忽略 For 循环中的定义；使用封闭范围中的定义
+                 ..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1236) : 忽略“i”的定义
+                 ..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1215) : 使用“i”的定义
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1259): warning C4258: “i”: 忽略 For 循环中的定义；使用封闭范围中的定义
+                 ..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1236) : 忽略“i”的定义
+                 ..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1215) : 使用“i”的定义
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1261): warning C4258: “i”: 忽略 For 循环中的定义；使用封闭范围中的定义
+                 ..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1236) : 忽略“i”的定义
+                 ..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1215) : 使用“i”的定义
+     1>..\..\..\source\EOL_calib_cb\eol_corner_detect.cpp(1837): warning C4101: “remove_quad_id”: 未引用的局部变量
+       Link:
+         D:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"E:\CODE\源码\EOL_calib_GAC\port\vc2012\EOL_calib_cb\x64\Debug\EOL_calib_cb.exe" /INCREMENTAL /NOLOGO /LIBPATH:..\x64\Debug /LIBPATH:..\..\..\..\DAFramework\port\vc2012\x64\Debug FrameworkBase.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:\CODE\源码\EOL_calib_GAC\port\vc2012\EOL_calib_cb\x64\Debug\EOL_calib_cb.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\CODE\源码\EOL_calib_GAC\port\vc2012\EOL_calib_cb\x64\Debug\EOL_calib_cb.lib" /MACHINE:X64 x64\Debug\camera_model64.obj
+         x64\Debug\levmarqt_minimizer.obj
+         x64\Debug\math_common.obj
+         x64\Debug\eol_corner_detect.obj
+         x64\Debug\eol_calc_ground_coordinate.obj
+         x64\Debug\eol_chessboard_detect.obj
+         x64\Debug\eol_debug.obj
+         x64\Debug\eol_main_driver.obj
+         x64\Debug\eol_opencv_adapter.obj
+         x64\Debug\eol_pose_estimator.obj
+         x64\Debug\eol_image_process.obj
+         x64\Debug\eol_utility.obj
+         x64\Debug\eol_calib.obj
+         x64\Debug\stdafx.obj
+     1>LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/LTCG”规范)
+     1>LINK : fatal error LNK1181: 无法打开输入文件“FrameworkBase.lib”
+     1>已完成生成项目“E:\CODE\源码\EOL_calib_GAC\port\vc2012\EOL_calib_cb\EOL_calib_cb.vcxproj”(Build 个目标)的操作 - 失败。
+
+生成失败。
+
+已用时间 00:00:01.62
