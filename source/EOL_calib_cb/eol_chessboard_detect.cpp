@@ -332,9 +332,12 @@ int32_t EOL_chessboard_detect(IplImage* sProcessImg_in[CAMERA_NUM],
 		block_size = cvRound(MIN(sProcessImg_in[camid]->width,sProcessImg_in[camid]->height)*0.2)|1;
 		cvAdaptiveThreshold( norm_img, thresh_img, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, block_size, 0 );
 		
+		IplImage* gray_image = cvCreateImage(cvSize(norm_img->width, norm_img->height), IPL_DEPTH_8U, 1);
+		cvCopy(norm_img, gray_image);
+
 		char str1[250];
-		sprintf(str1, "d://TestThreshold_%d.raw",camid);
-		SaveRawFile(str1, thresh_img->imageData, sProcessImg_in[camid]->width*sProcessImg_in[camid]->height);
+		sprintf(str1, "d://1TestThreshold_%d.raw",camid);
+		SaveRawFile(str1, norm_img->imageData, sProcessImg_in[camid]->width*sProcessImg_in[camid]->height);
 		
 		/* the corner num of each pattern */
 		int32_t pattern_corner_num[CB_MAX_NUM] = { EOL_MAX_CORNER_NUM, 
@@ -378,13 +381,13 @@ int32_t EOL_chessboard_detect(IplImage* sProcessImg_in[CAMERA_NUM],
 			{
 				if (STATION_TYPE_GAC == p_Eol_param->station_type)
 				{
-
+					ret_corner_detect = corner_detector[camid].cvFindChessboardCornersSVM(thresh_img, gray_image);
 				}
+					
 				else
 				{
 					ret_corner_detect = corner_detector[camid].cvFindChessboardCorners2(thresh_img);
 				}
-				
 			}
 			else
 			{

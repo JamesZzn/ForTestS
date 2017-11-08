@@ -5,13 +5,17 @@
 #include <eol_opencv_adapter.h>
 #endif
 
+
 #include "utility\common\reuse.h"
 #include "utility\common\bev_data_type.h"
 #include "eol_data_type.h"
 #include "eol_config.h"
+#include "eol_svm.h"
 
 #include <time.h>
 #include <fstream>
+
+
 using namespace std;
 using std::ifstream;
 
@@ -75,6 +79,11 @@ CvCBQuad;
 
 typedef struct
 {
+	CvCBQuad rect[2];
+}CvCBQuad2;
+
+typedef struct
+{
 	IplImage *img_in;                               //输入图像指针
 	//int elem_size;                                //根据板子模式分配的点空间大小
 	//CvPoint2D32f* image_points_buf;               //点暂存区
@@ -87,6 +96,8 @@ typedef struct
 	PatternSide pattern_side;                       //当前棋盘格应在图像左侧时为2，右侧时为1，两侧均可时为0
 	int32_t station_type;
 
+//	CvSVM svm_hog;
+
 	int corner_count;
 	int valid_num;
 
@@ -94,6 +105,7 @@ typedef struct
 	void deinit();
 	int cvFindChessboardCorners3(const IplImage* img);          //4*4,4*3,4*2棋盘检测函数
 	int cvFindChessboardCorners2(const IplImage* img);		 //1*1棋盘检测
+	int cvFindChessboardCornersSVM(const IplImage* img, const IplImage* GrayImage);		 //基于SVM检测1*1棋盘检测
 
 	int icvGenerateQuads( CvCBQuad **quads, CvCBCorner **corners,
 								 CvMemStorage *storage, IplImage *image, int flags, int dilation,
@@ -114,6 +126,9 @@ typedef struct
 	void mrCopyQuadGroup( CvCBQuad **temp_quad_group, CvCBQuad **out_quad_group, 
 								 int count );
 
+
+	int mrFindAimPattern(const IplImage* GrayImage,vector<CvCBQuad2> corner_group_vector);	//通过机器学习找到目标标板
+
 	int icvCleanFoundConnectedQuads( int quad_count, CvCBQuad **quads, 
 											CvSize pattern_size );                    //滤除不符合pattern尺寸的多边形群
 
@@ -128,10 +143,8 @@ typedef struct
 	void removeInvalidQuads(CvCBQuad** quad_group, CvSize board_size, int& count);        //滤除位置不正确的多边形
 }chessBoard_corner_detector;
 
-typedef struct
-{
-	CvCBQuad rect[2];
-}CvCBQuad2;
-
 bool SaveRawFile1(const char* sfilename, char *pBuffer, int iSize);
+
+bool SaveBmpFile(const char* sfilename, unsigned char *pBuffer, unsigned int width, unsigned int height, int bitwidth);
+bool VertFlipBuf(unsigned char *inbuf, unsigned int widthBytes, unsigned int height);
 #endif

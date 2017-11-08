@@ -35,6 +35,16 @@ using namespace std;
     #define cvFree(ptr) (cvFree_(*(ptr)), *(ptr)=0)
     #define CV_TOGGLE_FLT(x) ((x)^((int)(x) < 0 ? 0x7fffffff : 0))
 
+	// Support Vector Machines  
+	#define CV_EXPORTS
+	#define CV_EXPORTS_W CV_EXPORTS
+	#define CV_WRAP
+
+	// HOGDescriptor
+	#define CV_PROP
+	#define CV_OUT
+	typedef std::string String;
+
     /****************************************************************************************\
     *                                  Image type (IplImage)                                 *
     \****************************************************************************************/
@@ -1035,6 +1045,478 @@ using namespace std;
         _Tp buf[(fixed_size > 0) ? fixed_size : 1];
     };
 
+
+#if 0
+
+	/****************************************************************************************\
+	*                                   Support Vector Machines                              *
+	\****************************************************************************************/
+
+	class CV_EXPORTS_W FileStorage
+	{
+	public:
+		//! file storage mode
+		enum Mode
+		{
+			READ = 0, //!< value, open the file for reading
+			WRITE = 1, //!< value, open the file for writing
+			APPEND = 2, //!< value, open the file for appending
+			MEMORY = 4, //!< flag, read data from source or write data to the internal buffer (which is
+			//!< returned by FileStorage::release)
+			FORMAT_MASK = (7 << 3), //!< mask for format flags
+			FORMAT_AUTO = 0,      //!< flag, auto format
+			FORMAT_XML = (1 << 3), //!< flag, XML format
+			FORMAT_YAML = (2 << 3)  //!< flag, YAML format
+		};
+		enum
+		{
+			UNDEFINED = 0,
+			VALUE_EXPECTED = 1,
+			NAME_EXPECTED = 2,
+			INSIDE_MAP = 4
+		};
+
+		/** @brief The constructors.
+
+		The full constructor opens the file. Alternatively you can use the default constructor and then
+		call FileStorage::open.
+		*/
+		CV_WRAP FileStorage();
+
+		/** @overload
+		@param source Name of the file to open or the text string to read the data from. Extension of the
+		file (.xml or .yml/.yaml) determines its format (XML or YAML respectively). Also you can append .gz
+		to work with compressed files, for example myHugeMatrix.xml.gz. If both FileStorage::WRITE and
+		FileStorage::MEMORY flags are specified, source is used just to specify the output file format (e.g.
+		mydata.xml, .yml etc.).
+		@param flags Mode of operation. See  FileStorage::Mode
+		@param encoding Encoding of the file. Note that UTF-16 XML encoding is not supported currently and
+		you should use 8-bit encoding instead of it.
+		*/
+		CV_WRAP FileStorage(const String& source, int flags, const String& encoding = String());
+
+		/** @overload */
+		FileStorage(CvFileStorage* fs, bool owning = true);
+
+		//! the destructor. calls release()
+		virtual ~FileStorage();
+
+		/** @brief Opens a file.
+
+		See description of parameters in FileStorage::FileStorage. The method calls FileStorage::release
+		before opening the file.
+		@param filename Name of the file to open or the text string to read the data from.
+		Extension of the file (.xml or .yml/.yaml) determines its format (XML or YAML respectively).
+		Also you can append .gz to work with compressed files, for example myHugeMatrix.xml.gz. If both
+		FileStorage::WRITE and FileStorage::MEMORY flags are specified, source is used just to specify
+		the output file format (e.g. mydata.xml, .yml etc.).
+		@param flags Mode of operation. One of FileStorage::Mode
+		@param encoding Encoding of the file. Note that UTF-16 XML encoding is not supported currently and
+		you should use 8-bit encoding instead of it.
+		*/
+		CV_WRAP virtual bool open(const String& filename, int flags, const String& encoding = String());
+
+		/** @brief Checks whether the file is opened.
+
+		@returns true if the object is associated with the current file and false otherwise. It is a
+		good practice to call this method after you tried to open a file.
+		*/
+		CV_WRAP virtual bool isOpened() const;
+
+		/** @brief Closes the file and releases all the memory buffers.
+
+		Call this method after all I/O operations with the storage are finished.
+		*/
+		CV_WRAP virtual void release();
+
+		/** @brief Closes the file and releases all the memory buffers.
+
+		Call this method after all I/O operations with the storage are finished. If the storage was
+		opened for writing data and FileStorage::WRITE was specified
+		*/
+		CV_WRAP virtual String releaseAndGetString();
+
+		/** @brief Returns the first element of the top-level mapping.
+		@returns The first element of the top-level mapping.
+		*/
+		CV_WRAP FileNode getFirstTopLevelNode() const;
+
+		/** @brief Returns the top-level mapping
+		@param streamidx Zero-based index of the stream. In most cases there is only one stream in the file.
+		However, YAML supports multiple streams and so there can be several.
+		@returns The top-level mapping.
+		*/
+		CV_WRAP FileNode root(int streamidx = 0) const;
+
+		/** @brief Returns the specified element of the top-level mapping.
+		@param nodename Name of the file node.
+		@returns Node with the given name.
+		*/
+		FileNode operator[](const String& nodename) const;
+
+		/** @overload */
+		CV_WRAP FileNode operator[](const char* nodename) const;
+
+		/** @brief Returns the obsolete C FileStorage structure.
+		@returns Pointer to the underlying C FileStorage structure
+		*/
+		CvFileStorage* operator *() { return fs.get(); }
+
+		/** @overload */
+		const CvFileStorage* operator *() const { return fs.get(); }
+
+		/** @brief Writes multiple numbers.
+
+		Writes one or more numbers of the specified format to the currently written structure. Usually it is
+		more convenient to use operator `<<` instead of this method.
+		@param fmt Specification of each array element, see @ref format_spec "format specification"
+		@param vec Pointer to the written array.
+		@param len Number of the uchar elements to write.
+		*/
+		void writeRaw(const String& fmt, const uchar* vec, size_t len);
+
+		/** @brief Writes the registered C structure (CvMat, CvMatND, CvSeq).
+		@param name Name of the written object.
+		@param obj Pointer to the object.
+		@see ocvWrite for details.
+		*/
+		void writeObj(const String& name, const void* obj);
+
+		/** @brief Returns the normalized object name for the specified name of a file.
+		@param filename Name of a file
+		@returns The normalized object name.
+		*/
+		static String getDefaultObjectName(const String& filename);
+
+		Ptr<CvFileStorage> fs; //!< the underlying C FileStorage structure
+		String elname; //!< the currently written element
+		std::vector<char> structs; //!< the stack of written structures
+		int state; //!< the writer state
+	};
+
+	class CV_EXPORTS_W Algorithm
+	{
+	public:
+		Algorithm();
+		virtual ~Algorithm();
+
+		/** @brief Clears the algorithm state
+		*/
+		CV_WRAP virtual void clear() {}
+
+		/** @brief Stores algorithm parameters in a file storage
+		*/
+		virtual void write(FileStorage& fs) const { (void)fs; }
+
+		/** @brief Reads algorithm parameters from a file storage
+		*/
+		virtual void read(const FileNode& fn) { (void)fn; }
+
+		/** @brief Returns true if the Algorithm is empty (e.g. in the very beginning or after unsuccessful read
+		*/
+		virtual bool empty() const { return false; }
+
+		template<typename _Tp> static Ptr<_Tp> read(const FileNode& fn)
+		{
+			Ptr<_Tp> obj = _Tp::create();
+			obj->read(fn);
+			return !obj->empty() ? obj : Ptr<_Tp>();
+		}
+
+		template<typename _Tp> static Ptr<_Tp> load(const String& filename, const String& objname = String())
+		{
+			FileStorage fs(filename, FileStorage::READ);
+			FileNode fn = objname.empty() ? fs.getFirstTopLevelNode() : fs[objname];
+			Ptr<_Tp> obj = _Tp::create();
+			obj->read(fn);
+			return !obj->empty() ? obj : Ptr<_Tp>();
+		}
+
+		template<typename _Tp> static Ptr<_Tp> loadFromString(const String& strModel, const String& objname = String())
+		{
+			FileStorage fs(strModel, FileStorage::READ + FileStorage::MEMORY);
+			FileNode fn = objname.empty() ? fs.getFirstTopLevelNode() : fs[objname];
+			Ptr<_Tp> obj = _Tp::create();
+			obj->read(fn);
+			return !obj->empty() ? obj : Ptr<_Tp>();
+		}
+
+		/** Saves the algorithm to a file.
+		In order to make this method work, the derived class must implement Algorithm::write(FileStorage& fs). */
+		CV_WRAP virtual void save(const String& filename) const;
+
+		/** Returns the algorithm string identifier.
+		This string is used as top level xml/yml node tag when the object is saved to a file or string. */
+		CV_WRAP virtual String getDefaultName() const;
+	};
+	/** @brief Base class for statistical models in OpenCV ML.
+	*/
+	class CV_EXPORTS_W StatModel : public Algorithm
+	{
+	public:
+		/** Predict options */
+		enum Flags {
+			UPDATE_MODEL = 1,
+			RAW_OUTPUT = 1, //!< makes the method return the raw results (the sum), not the class label
+			COMPRESSED_INPUT = 2,
+			PREPROCESSED_INPUT = 4
+		};
+
+		/** @brief Returns the number of variables in training samples */
+		CV_WRAP virtual int getVarCount() const = 0;
+
+		CV_WRAP virtual bool empty() const;
+
+		/** @brief Returns true if the model is trained */
+		CV_WRAP virtual bool isTrained() const = 0;
+		/** @brief Returns true if the model is classifier */
+		CV_WRAP virtual bool isClassifier() const = 0;
+
+		/** @brief Trains the statistical model
+
+		@param trainData training data that can be loaded from file using TrainData::loadFromCSV or
+		created with TrainData::create.
+		@param flags optional flags, depending on the model. Some of the models can be updated with the
+		new training samples, not completely overwritten (such as NormalBayesClassifier or ANN_MLP).
+		*/
+		CV_WRAP virtual bool train(const Ptr<TrainData>& trainData, int flags = 0);
+
+		/** @brief Trains the statistical model
+
+		@param samples training samples
+		@param layout See ml::SampleTypes.
+		@param responses vector of responses associated with the training samples.
+		*/
+		CV_WRAP virtual bool train(InputArray samples, int layout, InputArray responses);
+
+		/** @brief Computes error on the training or test dataset
+
+		@param data the training data
+		@param test if true, the error is computed over the test subset of the data, otherwise it's
+		computed over the training subset of the data. Please note that if you loaded a completely
+		different dataset to evaluate already trained classifier, you will probably want not to set
+		the test subset at all with TrainData::setTrainTestSplitRatio and specify test=false, so
+		that the error is computed for the whole new set. Yes, this sounds a bit confusing.
+		@param resp the optional output responses.
+
+		The method uses StatModel::predict to compute the error. For regression models the error is
+		computed as RMS, for classifiers - as a percent of missclassified samples (0%-100%).
+		*/
+		CV_WRAP virtual float calcError(const Ptr<TrainData>& data, bool test, OutputArray resp) const;
+
+		/** @brief Predicts response(s) for the provided sample(s)
+
+		@param samples The input samples, floating-point matrix
+		@param results The optional output matrix of results.
+		@param flags The optional flags, model-dependent. See cv::ml::StatModel::Flags.
+		*/
+		CV_WRAP virtual float predict(InputArray samples, OutputArray results = noArray(), int flags = 0) const = 0;
+
+		/** @brief Create and train model with default parameters
+
+		The class must implement static `create()` method with no parameters or with all default parameter values
+		*/
+		template<typename _Tp> static Ptr<_Tp> train(const Ptr<TrainData>& data, int flags = 0)
+		{
+			Ptr<_Tp> model = _Tp::create();
+			return !model.empty() && model->train(data, flags) ? model : Ptr<_Tp>();
+		}
+	};
+	/** @brief Support Vector Machines.
+
+	@sa @ref ml_intro_svm
+	*/
+	class CV_EXPORTS_W SVM : public StatModel
+	{
+	public:
+
+		class CV_EXPORTS Kernel : public Algorithm
+		{
+		public:
+			virtual int getType() const = 0;
+			virtual void calc(int vcount, int n, const float* vecs, const float* another, float* results) = 0;
+		};
+
+		/** Type of a %SVM formulation.
+		See SVM::Types. Default value is SVM::C_SVC. */
+		/** @see setType */
+		CV_WRAP virtual int getType() const = 0;
+		/** @copybrief getType @see getType */
+		CV_WRAP virtual void setType(int val) = 0;
+
+		/** Parameter \f$\gamma\f$ of a kernel function.
+		For SVM::POLY, SVM::RBF, SVM::SIGMOID or SVM::CHI2. Default value is 1. */
+		/** @see setGamma */
+		CV_WRAP virtual double getGamma() const = 0;
+		/** @copybrief getGamma @see getGamma */
+		CV_WRAP virtual void setGamma(double val) = 0;
+
+		/** Parameter _coef0_ of a kernel function.
+		For SVM::POLY or SVM::SIGMOID. Default value is 0.*/
+		/** @see setCoef0 */
+		CV_WRAP virtual double getCoef0() const = 0;
+		/** @copybrief getCoef0 @see getCoef0 */
+		CV_WRAP virtual void setCoef0(double val) = 0;
+
+		/** Parameter _degree_ of a kernel function.
+		For SVM::POLY. Default value is 0. */
+		/** @see setDegree */
+		CV_WRAP virtual double getDegree() const = 0;
+		/** @copybrief getDegree @see getDegree */
+		CV_WRAP virtual void setDegree(double val) = 0;
+
+		CV_WRAP virtual double getC() const = 0;
+		/** @copybrief getC @see getC */
+		CV_WRAP virtual void setC(double val) = 0;
+
+		/** Parameter \f$\nu\f$ of a %SVM optimization problem.
+		For SVM::NU_SVC, SVM::ONE_CLASS or SVM::NU_SVR. Default value is 0. */
+		/** @see setNu */
+		CV_WRAP virtual double getNu() const = 0;
+		/** @copybrief getNu @see getNu */
+		CV_WRAP virtual void setNu(double val) = 0;
+
+		/** Parameter \f$\epsilon\f$ of a %SVM optimization problem.
+		For SVM::EPS_SVR. Default value is 0. */
+		/** @see setP */
+		CV_WRAP virtual double getP() const = 0;
+		/** @copybrief getP @see getP */
+		CV_WRAP virtual void setP(double val) = 0;
+
+		/** Optional weights in the SVM::C_SVC problem, assigned to particular classes.
+		They are multiplied by _C_ so the parameter _C_ of class _i_ becomes `classWeights(i) * C`. Thus
+		these weights affect the misclassification penalty for different classes. The larger weight,
+		the larger penalty on misclassification of data from the corresponding class. Default value is
+		empty Mat. */
+		/** @see setClassWeights */
+		CV_WRAP virtual cv::Mat getClassWeights() const = 0;
+		/** @copybrief getClassWeights @see getClassWeights */
+		CV_WRAP virtual void setClassWeights(const cv::Mat &val) = 0;
+
+		/** Termination criteria of the iterative %SVM training procedure which solves a partial
+		case of constrained quadratic optimization problem.
+		You can specify tolerance and/or the maximum number of iterations. Default value is
+		`TermCriteria( TermCriteria::MAX_ITER + TermCriteria::EPS, 1000, FLT_EPSILON )`; */
+		/** @see setTermCriteria */
+		CV_WRAP virtual cv::TermCriteria getTermCriteria() const = 0;
+		/** @copybrief getTermCriteria @see getTermCriteria */
+		CV_WRAP virtual void setTermCriteria(const cv::TermCriteria &val) = 0;
+
+		/** Type of a %SVM kernel.
+		See SVM::KernelTypes. Default value is SVM::RBF. */
+		CV_WRAP virtual int getKernelType() const = 0;
+
+		/** Initialize with one of predefined kernels.
+		See SVM::KernelTypes. */
+		CV_WRAP virtual void setKernel(int kernelType) = 0;
+
+		/** Initialize with custom kernel.
+		See SVM::Kernel class for implementation details */
+		virtual void setCustomKernel(const Ptr<Kernel> &_kernel) = 0;
+
+		//! %SVM type
+		enum Types {
+			/** C-Support Vector Classification. n-class classification (n \f$\geq\f$ 2), allows
+			imperfect separation of classes with penalty multiplier C for outliers. */
+			C_SVC = 100,
+			/** \f$\nu\f$-Support Vector Classification. n-class classification with possible
+			imperfect separation. Parameter \f$\nu\f$ (in the range 0..1, the larger the value, the smoother
+			the decision boundary) is used instead of C. */
+			NU_SVC = 101,
+			/** Distribution Estimation (One-class %SVM). All the training data are from
+			the same class, %SVM builds a boundary that separates the class from the rest of the feature
+			space. */
+			ONE_CLASS = 102,
+			/** \f$\epsilon\f$-Support Vector Regression. The distance between feature vectors
+			from the training set and the fitting hyper-plane must be less than p. For outliers the
+			penalty multiplier C is used. */
+			EPS_SVR = 103,
+			/** \f$\nu\f$-Support Vector Regression. \f$\nu\f$ is used instead of p.
+			See @cite LibSVM for details. */
+			NU_SVR = 104
+		};
+
+		enum KernelTypes {
+			/** Returned by SVM::getKernelType in case when custom kernel has been set */
+			CUSTOM = -1,
+			/** Linear kernel. No mapping is done, linear discrimination (or regression) is
+			done in the original feature space. It is the fastest option. \f$K(x_i, x_j) = x_i^T x_j\f$. */
+			LINEAR = 0,
+			/** Polynomial kernel:
+			\f$K(x_i, x_j) = (\gamma x_i^T x_j + coef0)^{degree}, \gamma > 0\f$. */
+			POLY = 1,
+			/** Radial basis function (RBF), a good choice in most cases.
+			\f$K(x_i, x_j) = e^{-\gamma ||x_i - x_j||^2}, \gamma > 0\f$. */
+			RBF = 2,
+			/** Sigmoid kernel: \f$K(x_i, x_j) = \tanh(\gamma x_i^T x_j + coef0)\f$. */
+			SIGMOID = 3,
+			/** Exponential Chi2 kernel, similar to the RBF kernel:
+			\f$K(x_i, x_j) = e^{-\gamma \chi^2(x_i,x_j)}, \chi^2(x_i,x_j) = (x_i-x_j)^2/(x_i+x_j), \gamma > 0\f$. */
+			CHI2 = 4,
+			/** Histogram intersection kernel. A fast kernel. \f$K(x_i, x_j) = min(x_i,x_j)\f$. */
+			INTER = 5
+		};
+
+		//! %SVM params type
+		enum ParamTypes {
+			C = 0,
+			GAMMA = 1,
+			P = 2,
+			NU = 3,
+			COEF = 4,
+			DEGREE = 5
+		};
+
+		virtual bool trainAuto(const Ptr<TrainData>& data, int kFold = 10,
+			ParamGrid Cgrid = SVM::getDefaultGrid(SVM::C),
+			ParamGrid gammaGrid = SVM::getDefaultGrid(SVM::GAMMA),
+			ParamGrid pGrid = SVM::getDefaultGrid(SVM::P),
+			ParamGrid nuGrid = SVM::getDefaultGrid(SVM::NU),
+			ParamGrid coeffGrid = SVM::getDefaultGrid(SVM::COEF),
+			ParamGrid degreeGrid = SVM::getDefaultGrid(SVM::DEGREE),
+			bool balanced = false) = 0;
+
+		/** @brief Retrieves all the support vectors
+
+		The method returns all the support vector as floating-point matrix, where support vectors are
+		stored as matrix rows.
+		*/
+		CV_WRAP virtual Mat getSupportVectors() const = 0;
+
+		/** @brief Retrieves the decision function
+
+		@param i the index of the decision function. If the problem solved is regression, 1-class or
+		2-class classification, then there will be just one decision function and the index should
+		always be 0. Otherwise, in the case of N-class classification, there will be \f$N(N-1)/2\f$
+		decision functions.
+		@param alpha the optional output vector for weights, corresponding to different support vectors.
+		In the case of linear %SVM all the alpha's will be 1's.
+		@param svidx the optional output vector of indices of support vectors within the matrix of
+		support vectors (which can be retrieved by SVM::getSupportVectors). In the case of linear
+		%SVM each decision function consists of a single "compressed" support vector.
+
+		The method returns rho parameter of the decision function, a scalar subtracted from the weighted
+		sum of kernel responses.
+		*/
+		CV_WRAP virtual double getDecisionFunction(int i, OutputArray alpha, OutputArray svidx) const = 0;
+
+		/** @brief Generates a grid for %SVM parameters.
+
+		@param param_id %SVM parameters IDs that must be one of the SVM::ParamTypes. The grid is
+		generated for the parameter with this ID.
+
+		The function generates a grid for the specified parameter of the %SVM algorithm. The grid may be
+		passed to the function SVM::trainAuto.
+		*/
+		static ParamGrid getDefaultGrid(int param_id);
+
+		/** Creates empty model.
+		Use StatModel::train to train the model. Since %SVM has several parameters, you may want to
+		find the best parameters for your problem, it can be done with SVM::trainAuto. */
+		CV_WRAP static Ptr<SVM> create();
+	};
+#endif	
+
 	CvSlice cvSlice( int32_t start, int32_t end );
 	CvPoint cvPoint( int32_t x, int32_t y );
 	CvPoint2D32f cvPoint2D32f( float32_t x, float32_t y );
@@ -1186,6 +1668,7 @@ using namespace std;
 	void* cvAlloc( size_t size );
 	void cvFree_( void* ptr );
 
+	
 #endif
 
 #endif

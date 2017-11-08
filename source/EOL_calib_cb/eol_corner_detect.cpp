@@ -1,7 +1,22 @@
 #include<algorithm>
+#include <windows.h>
+#include <atltime.h>
 #include "eol_corner_detect.h"
+#include "utility\cv\feature\feat_hog.h"
+#include "utility\cv\feature\feat_hog.cpp"
 extern IplImage* thresh_img, *norm_img, *temp_img, *temp_img_copy;
 
+typedef unsigned long       DWORD;
+typedef unsigned short      WORD;
+typedef long      LONG;
+
+// typedef struct tagBITMAPFILEHEADER {
+// 	WORD    bfType;
+// 	DWORD   bfSize;
+// 	WORD    bfReserved1;
+// 	WORD    bfReserved2;
+// 	DWORD   bfOffBits;
+// } BITMAPFILEHEADER;
 
 void chessBoard_corner_detector::init()
 {
@@ -439,6 +454,351 @@ int chessBoard_corner_detector::cvFindChessboardCorners3( const IplImage* img )
 }
 
 /*
+Function Name:      cvFindChessboardCorners2
+Function Function : detect corners corners of 1x1 pattern
+Input             :
+img :           The input binary image
+Return            : error code
+1: exactly pattern is found;
+0: partly is found;
+-1: not found.
+Note              :
+Revision History  : Author         Data             Changes
+DaiXiaqiang    unknown          Create
+WangLuyao      2017/2/22        optimize call logic
+*/
+int chessBoard_corner_detector::cvFindChessboardCornersSVM(const IplImage* img, const IplImage* GrayImage)
+{
+	int flags = 1;
+	int max_count = 0;
+	int max_dilation_run_ID = -1;
+	const int min_dilations = corner_config.gloabal_min_dilate;
+	const int max_dilations = 2;
+	int found = 0;
+	CvMemStorage* storage = 0;
+
+	CvCBQuad *quads = 0;
+	CvCBQuad **quad_group = 0;
+	CvCBCorner *corners = 0;
+	CvCBCorner **corner_group = 0;
+	CvCBQuad **output_quad_group = 0;
+
+	int block_size = 0;
+	int quad_count, group_idx, dilations;
+
+	if (img->depth != IPL_DEPTH_8U || img->nChannels == 2)
+	{
+		return -1;
+	}
+
+	if (corner_config.board_size.width > 127 || corner_config.board_size.height > 127)
+	{
+		return -1;
+	}
+
+	int height = img->height;
+	int width = img->width;
+	storage = cvCreateMemStorage(0);
+	cvCopy(img, temp_img);
+	
+	for (int k = 0; k<4; k++)
+	{
+
+		if (boundary_point[k][0].x == 0 && boundary_point[k][0].y == 0
+			&& boundary_point[k][1].x == 0 && boundary_point[k][1].y == 0
+			&& boundary_point[k][2].x == 0 && boundary_point[k][2].y == 0
+			&& boundary_point[k][3].x == 0 && boundary_point[k][3].y == 0)
+		{
+			continue;
+		}
+
+		for (int p = 0; p<4; p++)
+		{
+			if (boundary_point[k][p].x < 0 || boundary_point[k][p].x >= temp_img->width
+				|| boundary_point[k][p].y < 0 || boundary_point[k][p].y >= temp_img->height)
+			{
+				return -1;
+			}
+		}
+
+		for (int i = MIN(boundary_point[k][0].y, boundary_point[k][1].y); i<MAX(boundary_point[k][2].y, boundary_point[k][3].y); i++)
+		{
+			for (int j = MIN(boundary_point[k][0].x, boundary_point[k][2].x); j<MAX(boundary_point[k][1].x, boundary_point[k][3].x); j++)
+			{
+				Point2f p(j, i);
+				bool flag = pInQuadrangle(boundary_point[k][0], boundary_point[k][1], boundary_point[k][2], boundary_point[k][3], p);
+				uchar* data = (uchar*)temp_img->imageData;
+				if (flag == 1)
+					data[i*temp_img->widthStep + j] = 255;
+			}
+		}
+	}
+
+	if (corner_config.reflection == 1)
+	{
+		//IplConvKernel *kernel_temp= cvCreateStructuringElementEx(3,3,1,1,CV_SHAPE_CROSS,NULL);
+		for (int i = 0; i<temp_img->height; i++)
+			for (int j = 0; j<temp_img->width; j++)
+			{
+			uchar* data = (uchar*)temp_img->imageData;
+			uchar imgPixValue = data[i*temp_img->widthStep + j];
+			imgPixValue = 255 - imgPixValue;
+			data[i*temp_img->widthStep + j] = imgPixValue;
+			}
+		cvDilate(temp_img, temp_img, 3, CV_SHAPE_CROSS, 2);
+		cvErode(temp_img, temp_img, 3, CV_SHAPE_RECT, 3);
+
+		for (int i = 0; i<temp_img->height; i++)
+			for (int j = 0; j<temp_img->width; j++)
+			{
+			uchar* data = (uchar*)temp_img->imageData;
+			uchar imgPixValue = data[i*temp_img->widthStep + j];
+			imgPixValue = 255 - imgPixValue;
+			data[i*temp_img->widthStep + j] = imgPixValue;
+			}
+	}
+
+
+
+	cvCopy(temp_img, temp_img_copy);
+	int two_group_founded = 0;
+
+	vector<CvCBQuad2> corner_group_twoPoint_vector;
+	for (dilations = min_dilations; dilations <= max_dilations; dilations++)
+	{
+		if (two_group_founded == 1)
+			break;
+		cvCopy(temp_img_copy, temp_img);
+
+		//myDilateV4(temp_img, temp_img, dilations);
+		if (temp_img->height <= 480) // standard definition
+		{
+			if (dilations == 1)
+				cvDilate(temp_img, temp_img, 3, CV_SHAPE_CROSS, 1);
+			if (dilations == 2)
+				cvDilate(temp_img, temp_img, 2, CV_SHAPE_BAR_HORI_LEFT, 1);
+			if (dilations == 3)
+				cvDilate(temp_img, temp_img, 2, CV_SHAPE_BAR_HORI_RIGHT, 1);
+			if (dilations == 4)
+				cvDilate(temp_img, temp_img, 2, CV_SHAPE_BAR_VERT_UP, 1);
+			if (dilations == 5)
+				cvDilate(temp_img, temp_img, 2, CV_SHAPE_BAR_VERT_DOWN, 1);
+			if (dilations == 6)
+				cvDilate(temp_img, temp_img, 2, CV_SHAPE_BAR_VERT_UP, 1);
+		}
+
+		else // high definition
+		{
+			if (dilations == 1)
+
+				cvDilate(temp_img, temp_img, 3, CV_SHAPE_CROSS, 1);
+			if (dilations == 2)
+
+				cvDilate(temp_img, temp_img, 3, CV_SHAPE_BAR_HORI_ALL, 1);
+			if (dilations == 3)
+
+				cvDilate(temp_img, temp_img, 3, CV_SHAPE_BAR_VERT_ALL, 1);
+			if (dilations == 4)
+
+				cvDilate(temp_img, temp_img, 3, CV_SHAPE_BAR_INCL_048, 1);
+			if (dilations == 5)
+
+				cvDilate(temp_img, temp_img, 3, CV_SHAPE_BAR_INCL_246, 1);
+			if (dilations == 6)
+				cvDilate(temp_img, temp_img, 3, CV_SHAPE_RECT, 1);
+		}
+
+		quad_count = icvGenerateQuads(&quads, &corners, storage, temp_img, flags, dilations, true);
+		if (quad_count <= 0)
+			continue;
+
+		mrFindQuadNeighbors2(quads, quad_count, dilations);
+
+		quad_group = (CvCBQuad**)cvAlloc(sizeof(quad_group[0]) * quad_count);
+		corner_group = (CvCBCorner**)cvAlloc(sizeof(corner_group[0]) * quad_count * 4);
+
+		CvCBQuad **corner_group_twoPoint = (CvCBQuad**)cvAlloc(sizeof(quad_group[0]) * quad_count * 4);
+
+		for (group_idx = 0;; group_idx++)
+		{
+			int count;
+			count = icvFindConnectedQuads(quads, quad_count, quad_group, group_idx, storage, dilations);
+			if (count == 2)
+			{
+				quad_group[0]->group_idx = 255;
+				quad_group[1]->group_idx = 255;
+				CvCBQuad2 quad2;
+				quad2.rect[0] = *quad_group[0];
+				quad2.rect[1] = *quad_group[1];
+				corner_group_twoPoint_vector.push_back(quad2);
+
+			}
+			if (count == 0)
+				break;
+		}
+
+		Point2f twoRectPoint1[255], twoRectPoint2[255];//两个相对四边形对角的坐标
+		int twoRectMode_num = 0;
+		if (corner_config.camid >= 2 && dilations < 0)
+		{
+			continue;
+		}
+		//输出pattern_Single_corner，two_group_founded的值
+		if (corner_group_twoPoint_vector.size() >= 1)
+		{			
+			mrFindAimPattern(GrayImage,corner_group_twoPoint_vector);
+			found = 1;
+			if (reference_point[1].x != 0 && reference_point[1].y != 0 && reference_point[2].x == 0 && reference_point[2].y == 0)
+			{
+
+// 				if (p.x > img_in->width / 6)
+// 				{
+// 					pattern_Single_corner[0].corner_point[0][0] = p;
+// 					pattern_Single_corner[0].flag[0][0] = 1;
+// 					pattern_Single_corner[0].rows = 1;
+// 					pattern_Single_corner[0].cols = 1;
+// 				}
+// 				else if (p.x < img_in->width * 5 / 6)
+// 				{
+// 					pattern_Single_corner[1].corner_point[0][0] = p;
+// 					pattern_Single_corner[1].flag[0][0] = 1;
+// 					pattern_Single_corner[1].rows = 1;
+// 					pattern_Single_corner[1].cols = 1;
+// 				}
+			}
+			cvFree(&quads);
+			cvFree(&corners);
+			cvFree(&corner_group_twoPoint);
+		}
+		break;//测试用
+	}
+	if ((pattern_Single_corner[0].flag[0][0] == 1) || (pattern_Single_corner[1].flag[0][0] == 1))
+		found = 1;
+	else
+		found = 0;
+	cvReleaseMemStorage(&storage);
+	cvFree(&quads);
+	cvFree(&corners);
+	cvFree(&quad_group);
+	cvFree(&corner_group);
+	cvFree(&output_quad_group);
+
+	// -1  ->	Error or corner linking problem
+	//  0  ->	Not enough corners were found
+	//  1  ->	Enough corners were found
+	return found;
+}
+
+int chessBoard_corner_detector::mrFindAimPattern(const IplImage* grayImage, vector<CvCBQuad2> corner_group_vector)
+{
+	int n = 0, count = 0,imagecount = 0;
+	int width = grayImage->width;
+	int height = grayImage->height;
+	
+	FeatHog *hog = new FeatHog();
+	
+	svm_model * svm = svm_load_model("E://project//EOL_product/sampel_data/GAC/smc//libsvm_minist_model.model");
+	if (!svm)
+		return -1;
+	for (vector<CvCBQuad2>::iterator it = corner_group_vector.begin(); it < corner_group_vector.end(); it++)
+	{
+		Point2f p, p1, p_cent;
+		for (int i = 0; i < 4; i++)
+		{
+			if (it->rect[0].neighbors[i])
+			{
+				p.x = it->rect[0].corners[i]->pt.x;
+				p.y = it->rect[0].corners[i]->pt.y;
+			}
+			if (it->rect[1].neighbors[i])
+			{
+				p1.x = it->rect[1].corners[i]->pt.x;
+				p1.y = it->rect[1].corners[i]->pt.y;
+			}
+			p_cent.x = (p.x + p1.x) / 2;//1*1块的中心坐标
+			p_cent.y = (p.y + p1.y) / 2;
+		}
+
+		//获取1*1块原始图像
+		int nBlockWidth = 64;
+		int nBlockHeight = 64;
+
+		int nStartX = p_cent.x - nBlockWidth / 2;
+		int nStartY = p_cent.y - nBlockHeight / 2;
+		int nEndX = p_cent.x + nBlockWidth / 2;
+		int nEndY = p_cent.y + nBlockHeight / 2;
+		if ((p_cent.x - nBlockWidth / 2) < 0 || (p_cent.y - nBlockHeight / 2) < 0 ||
+			(p_cent.x + nBlockWidth / 2) > width || (p_cent.y + nBlockHeight / 2) > height)
+			continue;
+
+		unsigned char* pGray = (unsigned char*)malloc(nBlockWidth*nBlockHeight*sizeof(unsigned char));
+		if (!pGray)
+			return -1;
+		for (int i = nStartY; i < nEndY; i++)
+		{
+			for (int j = nStartX; j < nEndX; j++)
+			{
+				pGray[(i - nStartY)*nBlockWidth + j - nStartX] = (unsigned char)grayImage->imageData[i*width + j];
+			}
+		}
+		CTime ct = CTime::GetCurrentTime();
+		char str2[250];
+		sprintf(str2, "d://testimage//block_%02d%02d%02d%02d.bmp", ct.GetDay(), ct.GetHour(), ct.GetMinute(), ct.GetSecond());
+		SaveBmpFile(str2, pGray, nBlockWidth,nBlockHeight,24);
+
+//		continue;
+		int l32BlockS = 16;;//算法相关，一般是16
+		int l32BinN = 8;// 算法相关，一般8
+		int l32IsPyrFeat = 0;// 是否计算金字塔特征，一般0
+
+		hog->init(nBlockWidth, nBlockHeight, nBlockWidth, nBlockHeight, l32BlockS, l32BinN, l32IsPyrFeat);
+
+		svm_node* SVMtrainMat = new svm_node[hog->l32TotalFeatDim + 1];
+
+		float32_t *pd64FeatVec = (float32_t*)malloc(hog->l32TotalFeatDim*sizeof(float32_t));
+		if (!pd64FeatVec)
+			return -1;
+
+		CvRect rectInImage;
+		rectInImage.x = 0;
+		rectInImage.y = 0;
+		rectInImage.width = nBlockWidth;
+		rectInImage.height = nBlockHeight;
+		hog->CalcHogFeat(pd64FeatVec, pGray, nBlockWidth, nBlockHeight, rectInImage);
+
+		n = 0;
+		for (int i = 0; i < hog->l32TotalFeatDim; i++)
+		{
+			SVMtrainMat[n].index = n;
+			SVMtrainMat[n].value =  pd64FeatVec[i];
+			n++;
+		}
+		SVMtrainMat[n].index = -1;
+
+		FILE* fp = fopen("d://svmdata.txt", "w");
+		if (fp)
+		{
+			for (int i = 0; i < hog->l32TotalFeatDim; i++)
+			{
+				fprintf(fp, "%05f\n", pd64FeatVec[i]);
+			}
+			fclose(fp);
+		}
+
+		int ret = svm_predict(svm, SVMtrainMat);//获取最终检测结果，这个predict的用法见 OpenCV的文档 
+
+		if (ret == 1)
+		{
+			char str1[250];
+			sprintf(str1, "d://aim_%d.raw",imagecount++);
+			SaveRawFile1(str1, (char*)pGray, nBlockWidth*nBlockHeight);
+		}
+	}
+
+	return 1;
+}
+
+/*
 	Function Name:      cvFindChessboardCorners2
 	Function Function : detect corners corners of 1x1 pattern
 	Input             : 
@@ -651,12 +1011,13 @@ int chessBoard_corner_detector::cvFindChessboardCorners2( const IplImage* img )
                 break;
         }
 		
-		Point2f twoRectPoint1[255],twoRectPoint2[255];
+		Point2f twoRectPoint1[255],twoRectPoint2[255];//两个相对四边形对角的坐标
 		int twoRectMode_num=0;
 		if(corner_config.camid>=2&&dilations < 0)
 		{
 			continue;
 		}
+		//输出pattern_Single_corner，two_group_founded的值
 		if(corner_group_twoPoint_vector.size()>1)
 		{
 			for(vector<CvCBQuad2>::iterator it=corner_group_twoPoint_vector.begin();it<corner_group_twoPoint_vector.end();it++)
@@ -5049,6 +5410,124 @@ bool SaveRawFile1(const char* sfilename, char *pBuffer, int iSize)
 	fclose(p_file);
 	return 0;
 }
+
+// typedef struct tagBITMAPINFOHEADER{
+// 	DWORD      biSize;
+// 	LONG       biWidth;
+// 	LONG       biHeight;
+// 	WORD       biPlanes;
+// 	WORD       biBitCount;
+// 	DWORD      biCompression;
+// 	DWORD      biSizeImage;
+// 	LONG       biXPelsPerMeter;
+// 	LONG       biYPelsPerMeter;
+// 	DWORD      biClrUsed;
+// 	DWORD      biClrImportant;
+// } BITMAPINFOHEADER;
+
+bool SaveBmpFile(const char* sfilename, unsigned char *pBuffer, unsigned int width, unsigned int height, int bitwidth)
+{
+	unsigned char* pTemp = (unsigned char*)malloc(width * height * (bitwidth / 8));
+//	memcpy(pTemp, pBuffer, width * height * (bitwidth / 8));
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			pTemp[i*width * 3 + j * 3 + 0] = pBuffer[i*width + j];
+			pTemp[i*width * 3 + j * 3 + 1] = pBuffer[i*width + j];
+			pTemp[i*width * 3 + j * 3 + 2] = pBuffer[i*width + j];
+		}
+	}
+	int				 OffBits;
+	int			 bmpFile;
+	BITMAPFILEHEADER bmpHeader;                     //Header for Bitmap file
+	BITMAPINFO		 bmpInfo;
+
+	OffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+	DWORD dwSizeImage = width*height*(bitwidth / 8);             //IMAGESIZE_X*IMAGESIZE_Y*3;
+
+	VertFlipBuf(pTemp, width*(bitwidth / 8), height);          //to correct the vertical flip problem.
+
+	bmpHeader.bfType = ((WORD)('M' << 8) | 'B');
+	bmpHeader.bfSize = OffBits + dwSizeImage;
+	bmpHeader.bfReserved1 = 0;
+	bmpHeader.bfReserved2 = 0;
+	bmpHeader.bfOffBits = OffBits;
+
+	bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmpInfo.bmiHeader.biWidth = width;
+	bmpInfo.bmiHeader.biHeight = height;
+	bmpInfo.bmiHeader.biPlanes = 1;
+	bmpInfo.bmiHeader.biBitCount = bitwidth;
+	bmpInfo.bmiHeader.biCompression = BI_RGB;
+	bmpInfo.bmiHeader.biSizeImage = 0;
+	bmpInfo.bmiHeader.biXPelsPerMeter = 0;
+	bmpInfo.bmiHeader.biYPelsPerMeter = 0;
+	bmpInfo.bmiHeader.biClrUsed = 0;
+	bmpInfo.bmiHeader.biClrImportant = 0;
+
+	bmpFile = _lcreat(sfilename, 0);
+	if (bmpFile < 0)
+	{
+		return FALSE;
+	}
+
+	int len;
+	len = _lwrite(bmpFile, (LPSTR)&bmpHeader, sizeof(BITMAPFILEHEADER));
+	len = _lwrite(bmpFile, (LPSTR)&bmpInfo, sizeof(BITMAPINFOHEADER));
+	len = _lwrite(bmpFile, (LPSTR)pTemp, bmpHeader.bfSize - sizeof(BITMAPFILEHEADER) - sizeof(BITMAPINFOHEADER) + 4);  //+4 is for exact filesize
+	_lclose(bmpFile);
+
+	free(pTemp);
+	return 1;
+}
+
+bool VertFlipBuf(unsigned char *inbuf, unsigned int widthBytes, unsigned int height)
+{
+	unsigned char *tb1;
+	unsigned char *tb2;
+
+	if (inbuf == NULL)
+		return 0;
+
+	unsigned int bufsize;
+
+	bufsize = widthBytes;
+
+	tb1 = (unsigned char *)malloc(bufsize);
+	if (tb1 == NULL)
+	{
+		return false;
+	}
+
+	tb2 = (unsigned char *)malloc(bufsize);
+	if (tb2 == NULL)
+	{
+		free(tb1);
+		return false;
+	}
+
+	unsigned int row_cnt;
+	unsigned long off1 = 0;
+	unsigned long off2 = 0;
+
+	for (row_cnt = 0; row_cnt < (height + 1) / 2; row_cnt++)
+	{
+		off1 = row_cnt*bufsize;
+		off2 = ((height - 1) - row_cnt)*bufsize;
+
+		memcpy(tb1, inbuf + off1, bufsize);
+		memcpy(tb2, inbuf + off2, bufsize);
+		memcpy(inbuf + off1, tb2, bufsize);
+		memcpy(inbuf + off2, tb1, bufsize);
+	}
+
+	free(tb1);
+	free(tb2);
+
+	return true;
+}
+
 //===========================================================================
 // END OF FILE
 //===========================================================================

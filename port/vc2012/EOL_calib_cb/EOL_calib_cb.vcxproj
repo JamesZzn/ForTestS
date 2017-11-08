@@ -30,6 +30,7 @@
     <ClCompile Include="..\..\..\source\EOL_calib_cb\eol_opencv_adapter.cpp" />
     <ClCompile Include="..\..\..\source\EOL_calib_cb\eol_pose_estimator.cpp" />
     <ClCompile Include="..\..\..\source\EOL_calib_cb\eol_image_process.cpp" />
+    <ClCompile Include="..\..\..\source\EOL_calib_cb\eol_svm.cpp" />
     <ClCompile Include="..\..\..\source\EOL_calib_cb\eol_utility.cpp" />
     <ClCompile Include="..\..\..\source\pc_wrapper\eol_calib.cpp" />
     <ClCompile Include="..\..\..\source\pc_wrapper\stdafx.cpp" />
@@ -49,6 +50,7 @@
     <ClInclude Include="..\..\..\source\EOL_calib_cb\eol_opencv_adapter.h" />
     <ClInclude Include="..\..\..\source\EOL_calib_cb\eol_pose_estimator.h" />
     <ClInclude Include="..\..\..\source\EOL_calib_cb\eol_image_process.h" />
+    <ClInclude Include="..\..\..\source\EOL_calib_cb\eol_svm.h" />
     <ClInclude Include="..\..\..\source\EOL_calib_cb\eol_utility.h" />
     <ClInclude Include="..\..\..\source\pc_wrapper\eol_calib.h" />
     <ClInclude Include="..\..\..\source\pc_wrapper\stdafx.h" />
